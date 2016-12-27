@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/canvas2.js"></script>
+    <style>
+        body,ul,li{
+            list-style: none;
+            padding:0;margin:0;
+        }
+        .box{
+            width:800px;height:500px;
+            border:1px solid rgba(2, 2, 8, 0.96);
+            position:fixed;left:0;top:0;
+            bottom:0;right:0;margin:auto;
+            overflow: hidden;
+        }
+        .menu{
+            width:100%;height:44px;background: #ccc;
+            text-align: center;line-height: 40px;
+            border-bottom: 1px solid #666;
+        }
+        .menu .menu-list{
+            float:left;padding:0 24px;
+            cursor: pointer;font-weight: bold;
+            transition: color 0.5s ease;
+        }
+
+        .menu .menu-list:hover{
+            color:blue;
+        }
+        .main{
+            width:100%;height:460px;
+        }
+        .main .aside-menu{
+            box-sizing: border-box;
+            width:18%;height:100%;
+            overflow:auto;float:left;
+            border-right: 1px solid #666;
+        }
+        .main .canvas-box{
+            box-sizing: border-box;
+            float:left;
+            width:82%;height:100%;
+            position:relative;
+        }
+        .main .canvas-box canvas{
+            background:#eee;
+            width: 100%;height:100%;
+            position: absolute;
+        }
+        .main .canvas-box .copy{
+            position:absolute;
+            left:0;top:0;z-index: 999;
+            width:100%;height:100%;
+        }
+        .aside-menu{
+            text-align: center;
+            line-height:30px;
+            cursor:pointer;
+        }
+        .aside-menu-list:not(:first-child){
+            /*display:none;*/
+        }
+        .aside-menu-list{
+            border-bottom: 1px solid #666;
+
+        }
+        .aside-menu-list li{
+            display:inline-block;
+        }
+        .aside-menu-list input{
+            width:20px;
+        }
+
+        .eraser{
+            width:10px;height:10px;box-sizing: border-box;
+            border:1px solid red;
+            position:absolute;
+            left:0;top:0;display:none;
+
+        }
+        .selectarea{
+            position: absolute;
+            left:0;top:0;
+            border:1px solid #000;
+            display:none;
+        }
+        #shuzi,#shuzi1{
+            width:40px;
+        }
+        .miaobian{
+            padding-right: 8px;
+        }
+
+        @font-face {
+            font-family: 'iconfont';  /* project id："182447" */
+            src: url('//at.alicdn.com/t/font_4vfba7krp44pldi.eot');
+            src: url('//at.alicdn.com/t/font_4vfba7krp44pldi.eot?#iefix') format('embedded-opentype'),
+            url('//at.alicdn.com/t/font_4vfba7krp44pldi.woff') format('woff'),
+            url('//at.alicdn.com/t/font_4vfba7krp44pldi.ttf') format('truetype'),
+            url('//at.alicdn.com/t/font_4vfba7krp44pldi.svg#iconfont') format('svg');
+        }
+        .icon{
+            font-family:'iconfont';
+        }
+        .new:before{
+            content: "\e625";
+        }
+        .fanhui:before{
+            content: "\e600";
+        }
+        .baocun:before{
+            content: "\e628";
+            font-size: 14px;
+        }
+        .xian:before{
+            content: "\e74a";
+        }
+        .juxing:before{
+            content: "\e694";
+        }
+        .yuan:before{
+            content: "\e62e";
+        }
+        .duobian:before{
+            content: "\e7d1";
+        }
+        .duojiao:before{
+            content: "\e678";
+        }
+        .qianbi:before{
+            content: "\e69c";
+        }
+        /*.xi:before{*/
+            /*content: "\e74a";*/
+            /*width:50px;*/
+            /*font-size: 80px;*/
+        /*}*/
+        /*.zhong:before{*/
+            /*content: "\e639";*/
+            /*height:4px;font-size: 12px;*/
+        /*}*/
+        /*.cu:before{*/
+            /*content: "\e635";*/
+            /*height: 10px;*/
+        /*}*/
+        .xi{
+             width:80px;height:1px;
+             background: #ccc;
+         }
+        .zhong{
+            width:80px;height:3px;
+            background: #ccc;
+        }
+        .cu{
+            width:80px;height:5px;
+            background: #ccc;
+        }
+        .aside-menu-list .yidong,.mohu{
+            font-size: 12px;
+            /*padding-right: 10px;*/
+        }
+
+
+
+    </style>
+
+    <script>
+        window.onload=function(){
+            var canvasBox=document.querySelector(".canvas-box");
+            var canvasBoxW=canvasBox.offsetWidth;
+            var canvasBoxH=canvasBox.offsetHeight;
+            var canvas=document.querySelector("canvas");
+            var cobj=canvas.getContext("2d");
+            var copy=document.querySelector(".copy");
+            var xp=document.querySelector(".eraser");
+            canvas.width=canvasBoxW;
+            canvas.height=canvasBoxH;
+
+//            alert(canvas.width)
+            var drawObj=new shape(canvas,copy,cobj,xp);
+
+            /*菜单操作*/
+            $(".menu-list").click(function(){
+                var index=$(".menu-list").index(this);
+//                $(".aside-menu-list").hide().eq(index).slideToggle(200);
+                $(".aside-menu-list").css("color","#666").eq(index).css("color","red");
+            });
+
+            /*画图*/
+            $(".aside-menu-list:eq(1) li").click(function(){
+//            var fn=$(this).attr("data-role");
+//            if(fn!=="pen"){
+//                drawObj.type=fn;
+//                drawObj.draw();
+//            }else{
+//                drawObj.pen();
+//            }
+                if($(this).attr("data-role")=="pen"){
+                    drawObj.pen();
+                }else{
+                    drawObj.type=$(this).attr("data-role");
+                    if($(this).attr("data-role")=="bian"){
+                        drawObj.bianNum=prompt("请输入变数",5);
+                    }
+                    if($(this).attr("data-role")=="jiao"){
+                        drawObj.jiaoNum=prompt("请输入角数",5);
+                    }
+                    drawObj.draw();
+                }
+            });
+
+            /*画图的方式*/
+            $(".aside-menu-list:eq(2) li").click(function(){
+                var fn=$(this).attr("data-role");
+                drawObj.style=fn;
+                drawObj.draw();
+            })
+
+            /*画图的颜色*/
+            $(".aside-menu-list:eq(3) input").change(function(){
+                drawObj[$(this).attr("data-role")]=$(this).val();
+                drawObj.draw();
+            });
+
+//            /*线条的粗细*/
+            $(".aside-menu-list:eq(4) li").click(function(){
+                var num=$(this).attr("data-role");
+                if(num!=="null"){
+                    drawObj.lineW=num;
+                    drawObj.draw();
+                }
+            });
+            $(".aside-menu-list:eq(4) input").change(function(){
+                var num=$(this).val();
+                drawObj.lineW=num;
+                drawObj.draw();
+            });
+
+
+            /*文件*/
+            $(".aside-menu-list:eq(0) li").click(function(){
+                var index=$(".aside-menu-list:eq(0) li").index(this);
+                if(index==0){
+                    if(drawObj.historys.length>0){
+                        var yes=confirm("是否保存");
+                        if(yes){
+                            var url=canvas.toDataURL();
+                            var newurl=url.replace("image/png","stream/octet");
+                            location.href=newurl;
+                        }
+                    }
+                    cobj.clearRect(0,0,canvas.width,canvas.height);
+                    drawObj.historys=[];
+                }else if(index==1) {
+//                    //返回
+                    if (drawObj.historys.length == 0) {
+                        //no
+                        cobj.clearRect(0, 0, canvas.width, canvas.height);
+                        setTimeout(function () {
+                            alert("不能返回");
+                        }, 10);
+                    } else {
+                        if (drawObj.isback) {
+
+                            if (drawObj.historys.length == 1) {
+                                drawObj.historys.pop();
+                                cobj.clearRect(0, 0, canvas.width, canvas.height);
+                            } else {
+                                drawObj.historys.pop();
+                                cobj.putImageData(drawObj.historys.pop(), 0, 0);
+                            }
+                        } else {
+                            cobj.putImageData(drawObj.historys.pop(), 0, 0);
+                        }
+
+                        drawObj.isback = false;
+                    }
+                }else if(index==2){
+                    var url=canvas.toDataURL();
+                    var newurl=url.replace("image/png","stream/octet");
+                    location.href=newurl;
+                }
+            });
+
+
+            /*擦除*/
+
+            $(".menu-list:eq(5)").click(function(){
+//                alert(2)
+                drawObj.isshow=true;
+                var eobj=$(".eraser");
+                drawObj.eraser(eobj);
+                $(".aside-menu-list:eq(5) li input").val(drawObj.eraserSize);
+//                var eObj=$(".era");
+//                drawObj.xp(xpObj);
+//                drawObj.draw();
+//                drawObj.xp();
+
+
+//                drawObj.eraser(eObj);
+
+            });
+//
+
+            /*xp大小*/
+            $(".aside-menu-list:eq(5) input").change(function(){
+//                drawObj.xpsize=$(this).val();
+//                $(".xp").css({
+//                    width:$(this).val()+"px",
+//                    height:$(this).val()+"px"
+//                })
+                drawObj.eraserSize=$(this).val();
+                $(".eraser").css({width:drawObj.eraserSize,height:drawObj.eraserSize})
+            })
+
+
+            //移动
+            $(".select").click(function(){
+               alert( drawObj.select($(".selectarea")));
+                $(".select").css({color:"#fff"}).css("text-shadow","0 0 0 #000");
+                selectarea.style.border="1px dotted #000";
+            })
+
+
+
+        }
+    </script>
+</head>
+<body>
+<div class="box">
+    <ul class="menu">
+        <li class="menu-list">文件</li>
+        <li class="menu-list">画图</li>
+        <li class="menu-list">画图方式</li>
+        <li class="menu-list">颜色</li>
+        <li class="menu-list">线条宽度</li>
+        <li class="menu-list">擦除</li>
+        <li class="menu-list">移动</li>
+        <li class="menu-list">模糊</li>
+        <li class="menu-list">更多</li>
+    </ul>
+    <div class="main">
+        <aside class="aside-menu">
+            <ul class="aside-menu-list">
+                <li class="icon new">
+                    <!--<img src="" alt="">-->
+                </li>
+                <li class="icon fanhui"></li>
+                <li class="icon baocun"></li>
+            </ul>
+            <ul class="aside-menu-list">
+                <li data-role="line" class="icon xian"></li>
+                <li data-role="rect" class="icon juxing"></li>
+                <li data-role="arc" class="icon yuan"></li>
+                <br>
+                <li data-role="bian" class="icon duobian"></li>
+                <li data-role="jiao" class="icon duojiao"></li>
+                <li data-role="pen" class="icon qianbi"></li>
+            </ul>
+            <ul class="aside-menu-list" style="font-size: 12px">
+                <li data-role="stroke" class="miaobian">描边</li>
+                <li data-role="fill">填充</li>
+            </ul>
+            <ul class="aside-menu-list" style="font-size: 12px">
+                边 框:<input type="color" data-role="border">
+                <br>背 景:<input type="color" data-role="fill">
+            </ul>
+            <ul class="aside-menu-list" style="font-size: 12px">
+                <!--<li data-role="1" class="icon xi"></li>-->
+                <!--<li data-role="3" class="icon zhong"></li>-->
+                <!--<li data-role="5" class="icon cu"></li>-->
+                <li data-role="1" class="xi"></li>
+                <br>
+                <li data-role="3" class="zhong"></li>
+                <br>
+                <li data-role="5" class="cu"></li>
+                <br>
+                <!--<li data-role="null">num:<input type="number"></li>-->
+                宽度:<input type="number" value="10" id="shuzi">
+            </ul>
+            <ul class="aside-menu-list">
+                <li style="font-size: 12px" data-role="eraserSize">
+                   橡皮: <input type="number"  id="shuzi1" value="1">
+                </li>
+            </ul>
+            <ul class="aside-menu-list">
+               <li class="select yidong">移  动</li>
+            </ul>
+            <ul class="aside-menu-list">
+                <li class="mohu">模  糊</li>
+            </ul>
+        </aside>
+        <div class="canvas-box">
+            <canvas></canvas>
+            <div class="copy"></div>
+            <div class="eraser"></div>
+            <!--<div class="selectarea"></div>-->
+        </div>
+    </div>
+</div>
+</body>
+</html>
